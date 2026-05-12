@@ -587,14 +587,80 @@
   }
 
   @media (max-width: 640px) {
+    /* Layout */
+    .main { padding: 20px 14px 100px; }
+    .card { padding: 16px 14px; }
+
+    /* Grids → single column */
     .form-grid { grid-template-columns: 1fr; }
     .form-grid.three { grid-template-columns: 1fr; }
     .check-grid { grid-template-columns: 1fr; }
-    .check-grid-3 { grid-template-columns: 1fr 1fr; }
+    .check-grid-3 { grid-template-columns: 1fr; }
     .field.span2, .field.span3 { grid-column: span 1; }
-    .grading-table { font-size: 11px; }
-    .grading-table td input[type="number"] { width: 52px; }
-    .login-card { padding: 32px 24px; }
+
+    /* Header */
+    .header-text h1 { font-size: 14px; }
+    .header-text p { display: none; }
+    #user-name-display { display: none; }
+
+    /* Progress tabs */
+    .step-tab { padding: 10px 8px; font-size: 11px; gap: 4px; }
+    .step-tab-label { display: none; }
+
+    /* Section header */
+    .section-header h2 { font-size: 20px; }
+
+    /* Grading table → hidden, show mobile cards */
+    .grading-table-wrap { display: none; }
+    .grading-mobile { display: block !important; }
+
+    /* Inline fields → stack */
+    .inline-field { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .inline-field input { width: 100% !important; min-width: unset !important; }
+
+    /* font-size 16px prevents iOS auto-zoom */
+    input[type="text"], input[type="date"],
+    input[type="number"], select, textarea { font-size: 16px; }
+
+    /* Nav */
+    .nav-bar { padding: 10px 14px; }
+    .btn { padding: 10px 14px; font-size: 13px; }
+    .step-indicator { font-size: 11px; }
+
+    /* Login */
+    .login-card { padding: 28px 18px; margin: 0 8px; }
+  }
+
+  /* Mobile grading cards — hidden on desktop */
+  .grading-mobile { display: none; }
+  .grade-card {
+    border: 1.5px solid var(--border-light);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+    background: white;
+  }
+  .grade-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-mid);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-light);
+  }
+  .grade-row-mobile {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .grade-group-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 6px;
   }
 </style>
 </head>
@@ -606,7 +672,7 @@
     <div class="cmu-badge">CMU</div>
     <div class="header-text">
       <h1>Facial Paralysis Case Record Form</h1>
-      <p>Division of Plastic Surgery · Chiang Mai University</p>
+      <p>Chiang Mai University</p>
     </div>
     <div class="header-right" id="user-area" style="display:none">
       <div class="user-chip">
@@ -639,7 +705,7 @@
     <div class="login-card">
       <div class="login-logo">FP</div>
       <h2>Welcome to FP eCRF</h2>
-      <p>Facial Paralysis Case Record System<br>Chiang Mai University · Plastic Surgery</p>
+      <p>Facial Paralysis Case Record System<br>Chiang Mai University</p>
       <button class="google-btn" onclick="loginWithGoogle()">
         <svg class="google-icon" viewBox="0 0 48 48">
           <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
@@ -836,7 +902,78 @@
 
     <div class="card">
       <div class="card-title">Facial Grading Assessment</div>
-      <div style="overflow-x:auto">
+
+      <!-- Mobile version: cards per movement -->
+      <div class="grading-mobile">
+        <div class="grade-card">
+          <div class="grade-card-title">Brow elevation (Frontalis m.)</div>
+          <div class="grade-group-label">House-Brackmann (I–VI)</div>
+          <div class="grade-row-mobile">
+            <div class="field"><label>Right</label><input type="number" id="hb_brow_r_m" min="1" max="6" placeholder="I–VI" oninput="sync('hb_brow_r_m','hb_brow_r')"></div>
+            <div class="field"><label>Left</label><input type="number" id="hb_brow_l_m" min="1" max="6" placeholder="I–VI" oninput="sync('hb_brow_l_m','hb_brow_l')"></div>
+          </div>
+          <div class="grade-group-label">Sunnybrook (0–100)</div>
+          <div class="grade-row-mobile">
+            <div class="field"><label>Right</label><input type="number" id="sb_brow_r_m" min="0" max="100" placeholder="0–100" oninput="sync('sb_brow_r_m','sb_brow_r')"></div>
+            <div class="field"><label>Left</label><input type="number" id="sb_brow_l_m" min="0" max="100" placeholder="0–100" oninput="sync('sb_brow_l_m','sb_brow_l')"></div>
+          </div>
+        </div>
+        <div class="grade-card">
+          <div class="grade-card-title">Eye closure (Orbicularis oculi m.)</div>
+          <div class="grade-group-label">House-Brackmann (I–VI)</div>
+          <div class="grade-row-mobile">
+            <div class="field"><label>Right</label><input type="number" id="hb_eye_r_m" min="1" max="6" placeholder="I–VI" oninput="sync('hb_eye_r_m','hb_eye_r')"></div>
+            <div class="field"><label>Left</label><input type="number" id="hb_eye_l_m" min="1" max="6" placeholder="I–VI" oninput="sync('hb_eye_l_m','hb_eye_l')"></div>
+          </div>
+          <div class="grade-group-label">Sunnybrook (0–100)</div>
+          <div class="grade-row-mobile">
+            <div class="field"><label>Right</label><input type="number" id="sb_eye_r_m" min="0" max="100" placeholder="0–100" oninput="sync('sb_eye_r_m','sb_eye_r')"></div>
+            <div class="field"><label>Left</label><input type="number" id="sb_eye_l_m" min="0" max="100" placeholder="0–100" oninput="sync('sb_eye_l_m','sb_eye_l')"></div>
+          </div>
+        </div>
+        <div class="grade-card">
+          <div class="grade-card-title">Smile (Zygomaticus / Levator labii)</div>
+          <div class="grade-group-label">House-Brackmann (I–VI)</div>
+          <div class="grade-row-mobile">
+            <div class="field"><label>Right</label><input type="number" id="hb_smile_r_m" min="1" max="6" placeholder="I–VI" oninput="sync('hb_smile_r_m','hb_smile_r')"></div>
+            <div class="field"><label>Left</label><input type="number" id="hb_smile_l_m" min="1" max="6" placeholder="I–VI" oninput="sync('hb_smile_l_m','hb_smile_l')"></div>
+          </div>
+          <div class="grade-group-label">Sunnybrook (0–100)</div>
+          <div class="grade-row-mobile">
+            <div class="field"><label>Right</label><input type="number" id="sb_smile_r_m" min="0" max="100" placeholder="0–100" oninput="sync('sb_smile_r_m','sb_smile_r')"></div>
+            <div class="field"><label>Left</label><input type="number" id="sb_smile_l_m" min="0" max="100" placeholder="0–100" oninput="sync('sb_smile_l_m','sb_smile_l')"></div>
+          </div>
+        </div>
+        <div class="grade-card">
+          <div class="grade-card-title">Lip pucker (Orbicularis oris m.)</div>
+          <div class="grade-group-label">House-Brackmann (I–VI)</div>
+          <div class="grade-row-mobile">
+            <div class="field"><label>Right</label><input type="number" id="hb_pucker_r_m" min="1" max="6" placeholder="I–VI" oninput="sync('hb_pucker_r_m','hb_pucker_r')"></div>
+            <div class="field"><label>Left</label><input type="number" id="hb_pucker_l_m" min="1" max="6" placeholder="I–VI" oninput="sync('hb_pucker_l_m','hb_pucker_l')"></div>
+          </div>
+          <div class="grade-group-label">Sunnybrook (0–100)</div>
+          <div class="grade-row-mobile">
+            <div class="field"><label>Right</label><input type="number" id="sb_pucker_r_m" min="0" max="100" placeholder="0–100" oninput="sync('sb_pucker_r_m','sb_pucker_r')"></div>
+            <div class="field"><label>Left</label><input type="number" id="sb_pucker_l_m" min="0" max="100" placeholder="0–100" oninput="sync('sb_pucker_l_m','sb_pucker_l')"></div>
+          </div>
+        </div>
+        <div class="grade-card">
+          <div class="grade-card-title">Lip depressor</div>
+          <div class="grade-group-label">House-Brackmann (I–VI)</div>
+          <div class="grade-row-mobile">
+            <div class="field"><label>Right</label><input type="number" id="hb_depr_r_m" min="1" max="6" placeholder="I–VI" oninput="sync('hb_depr_r_m','hb_depr_r')"></div>
+            <div class="field"><label>Left</label><input type="number" id="hb_depr_l_m" min="1" max="6" placeholder="I–VI" oninput="sync('hb_depr_l_m','hb_depr_l')"></div>
+          </div>
+          <div class="grade-group-label">Sunnybrook (0–100)</div>
+          <div class="grade-row-mobile">
+            <div class="field"><label>Right</label><input type="number" id="sb_depr_r_m" min="0" max="100" placeholder="0–100" oninput="sync('sb_depr_r_m','sb_depr_r')"></div>
+            <div class="field"><label>Left</label><input type="number" id="sb_depr_l_m" min="0" max="100" placeholder="0–100" oninput="sync('sb_depr_l_m','sb_depr_l')"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Desktop version: table -->
+      <div class="grading-table-wrap" style="overflow-x:auto">
         <table class="grading-table">
           <thead>
             <tr>
@@ -890,7 +1027,7 @@
             </tr>
           </tbody>
         </table>
-      </div>
+      </div><!-- end grading-table-wrap -->
     </div>
 
     <div class="card">
@@ -1162,6 +1299,13 @@
   let currentStep = 0;
   let currentUser = null;
 
+  // ── SYNC mobile ↔ desktop grading inputs ──
+  function sync(fromId, toId) {
+    const v = document.getElementById(fromId)?.value;
+    const target = document.getElementById(toId);
+    if (target) target.value = v;
+  }
+
   // ── AUTH ──
   function loginWithGoogle() {
     // Simulate Google OAuth (replace with real Google Identity Services in production)
@@ -1287,27 +1431,11 @@
   }
 
   // ── SUBMIT ──
-  const WEB_APP_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL";
-
-  async function submitForm() {
-    const btn = document.getElementById('btn-submit');
-    btn.textContent = 'Submitting…';
-    btn.disabled = true;
-
+  function submitForm() {
     const caseNum = 'CMU-FP-' + String(Math.floor(1000 + Math.random() * 8999));
-    const payload = collectData();
-    payload.case_id = caseNum;
 
-    try {
-      await fetch(WEB_APP_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(payload)
-      });
-    } catch(err) {
-      console.warn('Submit error (may still have saved):', err);
-    }
+    // Here you would POST to Google Sheets via Apps Script Web App URL
+    // fetch('YOUR_APPS_SCRIPT_WEB_APP_URL', { method: 'POST', body: JSON.stringify(collectData()) })
 
     document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
     document.getElementById('progress-bar').style.display = 'none';
@@ -1323,81 +1451,12 @@
 
   function collectData() {
     return {
-      // Patient Info
-      hn:                  val('hn'),
-      visit_date:          val('visit_date'),
-      age:                 val('age'),
-      sex:                 val('sex'),
-      occupation:          val('occupation'),
-      underlying_disease:  val('underlying_disease'),
-      smoking:             val('smoking'),
-      prev_surgery:        val('prev_surgery'),
-      prev_botox:          val('prev_botox'),
-      prev_fp_tx:          val('prev_fp_tx'),
-      // Etiology & Onset
-      level:               getChecked('level'),
-      etiology:            getChecked('etiology'),
-      onset_date:          val('onset_date'),
-      duration:            val('duration'),
-      mode_onset:          getChecked('mode_onset'),
-      course:              getChecked('course'),
-      recurrent:           getChecked('episode'),
-      // Signs & Symptoms
-      side:                getChecked('side'),
-      symptoms:            getChecked('symptom'),
-      // Grading - House Brackmann
-      hb_brow_r:           val('hb_brow_r'),
-      hb_brow_l:           val('hb_brow_l'),
-      hb_eye_r:            val('hb_eye_r'),
-      hb_eye_l:            val('hb_eye_l'),
-      hb_smile_r:          val('hb_smile_r'),
-      hb_smile_l:          val('hb_smile_l'),
-      hb_pucker_r:         val('hb_pucker_r'),
-      hb_pucker_l:         val('hb_pucker_l'),
-      hb_depr_r:           val('hb_depr_r'),
-      hb_depr_l:           val('hb_depr_l'),
-      // Grading - Sunnybrook
-      sb_brow_r:           val('sb_brow_r'),
-      sb_brow_l:           val('sb_brow_l'),
-      sb_eye_r:            val('sb_eye_r'),
-      sb_eye_l:            val('sb_eye_l'),
-      sb_smile_r:          val('sb_smile_r'),
-      sb_smile_l:          val('sb_smile_l'),
-      sb_pucker_r:         val('sb_pucker_r'),
-      sb_pucker_l:         val('sb_pucker_l'),
-      sb_depr_r:           val('sb_depr_r'),
-      sb_depr_l:           val('sb_depr_l'),
-      // Synkinesis
-      synkinesis:          document.getElementById('synkinesis_present').checked ? 'Yes' : 'No',
-      synkinesis_severity: getChecked('synkinesis_severity'),
-      // Nerve Function
-      donor_nerve:         val('donor_nerve'),
-      cn5:                 val('cn5'),
-      cn11:                val('cn11'),
-      cn12:                val('cn12'),
-      // Ophthalmology
-      ophthalmo:           getChecked('ophthal'),
-      lagoph_mm:           val('lagoph_mm'),
-      bells:               val('bells'),
-      visual_acuity:       val('visual_acuity'),
-      // Investigations
-      investigations:      getChecked('invest'),
-      emg_date:            val('emg_date'),
-      emg_result:          val('emg_result'),
-      mri_date:            val('mri_date'),
-      mri_result:          val('mri_result'),
-      ct_date:             val('ct_date'),
-      ct_result:           val('ct_result'),
-      // Rehab & Goals
-      rehabilitation:      getChecked('rehab'),
-      goals:               getChecked('goal'),
-      // Surgery
-      surgery:             getChecked('surgery'),
-      notes:               val('notes'),
-      // Record
-      clinician:           currentUser?.name,
-      email:               currentUser?.email,
-      timestamp:           new Date().toISOString()
+      hn: val('hn'), visit_date: val('visit_date'), age: val('age'), sex: val('sex'),
+      etiology: getChecked('etiology'), duration: val('duration'),
+      side: getChecked('side'), symptoms: getChecked('symptom'),
+      surgery: getChecked('surgery'),
+      clinician: currentUser?.name, email: currentUser?.email,
+      timestamp: new Date().toISOString()
     };
   }
 </script>
