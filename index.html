@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Facial Paralysis eCRF — CMU</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --burgundy: #7a1c2e;
+    --burgundy-light: #9b2335;
+    --gold: #c8963e;
+    --gold-light: #e8b85a;
+    --cream: #f9f5ef;
+    --cream-dark: #f0e8d8;
+    --ink: #1a1209;
+    --ink-mid: #3d2b1a;
+    --ink-light: #7a6550;
+    --border: #d4c4a8;
+    --border-light: #e8dcc8;
+    --white: #ffffff;
+    --success: #2d6a4f;
+    --error: #c1121f;
+    --section-bg: rgba(255,255,255,0.7);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 10% 0%, rgba(122,28,46,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse at 90% 100%, rgba(200,150,62,0.08) 0%, transparent 60%);
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--burgundy);
+    color: var(--white);
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(122,28,46,0.3);
+  }
+  .header-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .cmu-badge {
+    width: 44px; height: 44px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 15px;
+    font-weight: bold;
+    color: var(--burgundy);
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+  }
+  .header-text h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    line-height: 1.2;
+    color: var(--white);
+  }
+  .header-text p {
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+    margin-top: 2px;
+    font-weight: 300;
+  }
+  .header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .user-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 100px;
+    padding: 6px 14px 6px 8px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.9);
+  }
+  .user-avatar {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--burgundy);
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    background: var(--cream-dark);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+  }
+  .progress-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .progress-inner::-webkit-scrollbar { display: none; }
+  .step-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-light);
+    white-space: nowrap;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .step-tab:hover { color: var(--burgundy); }
+  .step-tab.active {
+    color: var(--burgundy);
+    border-bottom-color: var(--burgundy);
+    font-weight: 600;
+  }
+  .step-tab.done { color: var(--success); }
+  .step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--ink-light);
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .step-tab.active .step-num {
+    background: var(--burgundy);
+    color: white;
+  }
+  .step-tab.done .step-num {
+    background: var(--success);
+    color: white;
+  }
+
+  /* ── MAIN ── */
+  .main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* ── LOGIN SCREEN ── */
+  #login-screen {
+    min-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px 40px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 8px 40px rgba(122,28,46,0.10);
+    text-align: center;
+  }
+  .login-logo {
+    width: 64px; height: 64px;
+    background: var(--burgundy);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: white;
+    margin: 0 auto 24px;
+  }
+  .login-card h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .login-card p {
+    font-size: 14px;
+    color: var(--ink-light);
+    margin-bottom: 32px;
+    line-height: 1.5;
+  }
+  .google-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 14px 20px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    background: white;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ink);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .google-btn:hover {
+    border-color: var(--burgundy);
+    background: var(--cream);
+    box-shadow: 0 2px 12px rgba(122,28,46,0.1);
+  }
+  .google-icon {
+    width: 20px; height: 20px;
+  }
+  .login-note {
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--ink-light);
+  }
+
+  /* ── FORM SECTIONS ── */
+  .form-section { display: none; }
+  .form-section.active { display: block; }
+
+  .section-header {
+    margin-bottom: 28px;
+  }
+  .section-header h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    color: var(--burgundy);
+    margin-bottom: 6px;
+  }
+  .section-header p {
+    font-size: 14px;
+    color: var(--ink-light);
+  }
+
+  .card {
+    background: var(--section-bg);
+    border: 1px solid var(--border-light);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    backdrop-filter: blur(4px);
+  }
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-light);
+  }
+
+  /* ── FORM ELEMENTS ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .form-grid.full { grid-template-columns: 1fr; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .field.span2 { grid-column: span 2; }
+  .field.span3 { grid-column: span 3; }
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-mid);
+    letter-spacing: 0.02em;
+  }
+  label .req { color: var(--error); margin-left: 2px; }
+
+  input[type="text"],
+  input[type="date"],
+  input[type="number"],
+  input[type="email"],
+  select,
+  textarea {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    color: var(--ink);
+    background: white;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--burgundy);
+    box-shadow: 0 0 0 3px rgba(122,28,46,0.08);
+  }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* ── CHECKBOXES ── */
+  .check-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .check-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border-light);
+    background: white;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 13.5px;
+    color: var(--ink-mid);
+  }
+  .check-row:hover {
+    border-color: var(--burgundy);
+    background: var(--cream);
+  }
+  .check-row input[type="checkbox"],
+  .check-row input[type="radio"] {
+    width: auto;
+    accent-color: var(--burgundy);
+    width: 16px; height: 16px;
+    cursor: pointer;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
+  .check-row input:focus { box-shadow: none; border-color: transparent; }
+
+  .check-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .check-grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+
+  /* ── GRADING TABLE ── */
+  .grading-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 8px;
+  }
+  .grading-table th {
+    background: var(--burgundy);
+    color: white;
+    padding: 10px 12px;
+    text-align: center;
+    font-weight: 500;
+    font-size: 12px;
+  }
+  .grading-table th:first-child { text-align: left; border-radius: 8px 0 0 0; }
+  .grading-table th:last-child { border-radius: 0 8px 0 0; }
+  .grading-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-light);
+    vertical-align: middle;
+  }
+  .grading-table tr:nth-child(even) td { background: var(--cream); }
+  .grading-table td input[type="number"] {
+    width: 70px;
+    padding: 6px 8px;
+    font-size: 13px;
+    text-align: center;
+  }
+  .grading-table td:first-child { font-size: 12.5px; color: var(--ink-mid); }
+  .grade-header { text-align: center; font-size: 11px; color: var(--ink-light); margin-bottom: 4px; }
+
+  /* ── INLINE TEXT INPUT ── */
+  .inline-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .inline-field input {
+    flex: 1;
+    min-width: 120px;
+  }
+
+  /* ── NAVIGATION ── */
+  .nav-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 90;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.06);
+  }
+  .nav-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .btn {
+    padding: 11px 24px;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: var(--burgundy);
+    color: white;
+  }
+  .btn-primary:hover { background: var(--burgundy-light); box-shadow: 0 4px 14px rgba(122,28,46,0.25); }
+  .btn-secondary {
+    background: var(--cream-dark);
+    color: var(--ink-mid);
+    border: 1.5px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--burgundy); color: var(--burgundy); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-light);
+    padding: 11px 16px;
+  }
+  .btn-ghost:hover { color: var(--burgundy); }
+  .btn-submit {
+    background: var(--success);
+    color: white;
+  }
+  .btn-submit:hover { opacity: 0.9; box-shadow: 0 4px 14px rgba(45,106,79,0.3); }
+
+  .step-indicator {
+    font-size: 13px;
+    color: var(--ink-light);
+    font-weight: 500;
+  }
+
+  /* ── REVIEW / SUBMIT ── */
+  .review-block {
+    margin-bottom: 16px;
+  }
+  .review-block h3 {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+  .review-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-light);
+    font-size: 13.5px;
+  }
+  .review-row .label { color: var(--ink-light); flex: 0 0 40%; }
+  .review-row .value { color: var(--ink); font-weight: 500; flex: 1; text-align: right; }
+
+  /* ── SUCCESS ── */
+  #success-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 160px);
+    text-align: center;
+    padding: 40px 24px;
+  }
+  .success-icon {
+    width: 80px; height: 80px;
+    background: var(--success);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    color: white;
+    margin-bottom: 24px;
+    animation: pop 0.4s ease;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    80% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  #success-screen h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  #success-screen p {
+    font-size: 15px;
+    color: var(--ink-light);
+    max-width: 400px;
+    line-height: 1.6;
+    margin-bottom: 32px;
+  }
+  .case-id-badge {
+    background: var(--cream-dark);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 28px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--burgundy);
+    font-family: 'DM Serif Display', serif;
+    letter-spacing: 0.05em;
+    margin-bottom: 32px;
+  }
+
+  /* ── MISC ── */
+  .divider { height: 1px; background: var(--border-light); margin: 16px 0; }
+  .sub-label {
+    font-size: 11px;
+    color: var(--ink-light);
+    font-weight: 400;
+    font-style: italic;
+  }
+  .note-box {
+    background: rgba(200,150,62,0.08);
+    border: 1px solid rgba(200,150,62,0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--ink-mid);
+    margin-top: 12px;
+  }
+  .side-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-light);
+    text-align: center;
+    padding: 4px 8px;
+    background: var(--cream-dark);
+    border-radius: 4px;
+  }
+
+  @media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid.three { grid-template-columns: 1fr; }
+    .check-grid { grid-template-columns: 1fr; }
+    .check-grid-3 { grid-template-columns: 1fr 1fr; }
+    .field.span2, .field.span3 { grid-column: span 1; }
+    .grading-table { font-size: 11px; }
+    .grading-table td input[type="number"] { width: 52px; }
+    .login-card { padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div class="cmu-badge">CMU</div>
+    <div class="header-text">
+      <h1>Facial Paralysis Case Record Form</h1>
+      <p>Division of Plastic Surgery · Chiang Mai University</p>
+    </div>
+    <div class="header-right" id="user-area" style="display:none">
+      <div class="user-chip">
+        <div class="user-avatar" id="user-initials">?</div>
+        <span id="user-name-display">Loading…</span>
+      </div>
+      <button class="btn btn-ghost" onclick="logout()" style="color:rgba(255,255,255,0.65);padding:6px 10px;font-size:12px;">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROGRESS TABS -->
+<div class="progress-wrap" id="progress-bar" style="display:none">
+  <div class="progress-inner">
+    <div class="step-tab active" onclick="goTo(0)" id="tab-0"><span class="step-num">1</span> Patient Info</div>
+    <div class="step-tab" onclick="goTo(1)" id="tab-1"><span class="step-num">2</span> Etiology & Onset</div>
+    <div class="step-tab" onclick="goTo(2)" id="tab-2"><span class="step-num">3</span> Signs & Symptoms</div>
+    <div class="step-tab" onclick="goTo(3)" id="tab-3"><span class="step-num">4</span> Physical Exam</div>
+    <div class="step-tab" onclick="goTo(4)" id="tab-4"><span class="step-num">5</span> Investigations</div>
+    <div class="step-tab" onclick="goTo(5)" id="tab-5"><span class="step-num">6</span> Management</div>
+    <div class="step-tab" onclick="goTo(6)" id="tab-6"><span class="step-num">7</span> Review & Submit</div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- ── LOGIN ── -->
+  <div id="login-screen">
+    <div class="login-card">
+      <div class="login-logo">FP</div>
+      <h2>Welcome to FP eCRF</h2>
+      <p>Facial Paralysis Case Record System<br>Chiang Mai University · Plastic Surgery</p>
+      <button class="google-btn" onclick="loginWithGoogle()">
+        <svg class="google-icon" viewBox="0 0 48 48">
+          <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34.5 6.5 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.9z"/>
+          <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 16.1 19 13 24 13c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34.5 6.5 29.5 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/>
+          <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.1l-6.2-5.2C29.3 35.3 26.8 36 24 36c-5.2 0-9.6-3.3-11.2-8L6.1 33.3C9.5 39.5 16.2 44 24 44z"/>
+          <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.2 5.2C37 38.1 44 33 44 24c0-1.3-.1-2.6-.4-3.9z"/>
+        </svg>
+        Continue with Google (@cmu.ac.th)
+      </button>
+      <div class="login-note">For CMU staff only. Use your @cmu.ac.th Google account to sign in and access the case registry.</div>
+    </div>
+  </div>
+
+  <!-- ── STEP 1: PATIENT INFO ── -->
+  <div class="form-section" id="section-0">
+    <div class="section-header">
+      <h2>Patient Information</h2>
+      <p>Basic demographic and background data</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Identification</div>
+      <div class="form-grid three">
+        <div class="field">
+          <label>HN <span class="req">*</span></label>
+          <input type="text" id="hn" placeholder="Hospital Number" required>
+        </div>
+        <div class="field">
+          <label>Date of Visit <span class="req">*</span></label>
+          <input type="date" id="visit_date" required>
+        </div>
+        <div class="field">
+          <label>Age <span class="req">*</span></label>
+          <input type="number" id="age" placeholder="years" min="0" max="120">
+        </div>
+        <div class="field">
+          <label>Sex <span class="req">*</span></label>
+          <select id="sex">
+            <option value="">— select —</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Occupation</label>
+          <input type="text" id="occupation" placeholder="e.g. Farmer, Office worker">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Medical Background</div>
+      <div class="form-grid">
+        <div class="field span2">
+          <label>Underlying Disease</label>
+          <input type="text" id="underlying_disease" placeholder="e.g. DM, HT, CKD…">
+        </div>
+        <div class="field span2">
+          <label>Smoking History</label>
+          <input type="text" id="smoking" placeholder="e.g. Non-smoker / 10 pack-years / Ex-smoker">
+        </div>
+        <div class="field span2">
+          <label>Previous Facial Surgery</label>
+          <input type="text" id="prev_surgery" placeholder="Describe previous facial surgical procedures if any">
+        </div>
+        <div class="field span2">
+          <label>Previous Botox / Filler / Facial Procedure</label>
+          <input type="text" id="prev_botox" placeholder="Type, date, location of prior injections or aesthetic procedures">
+        </div>
+        <div class="field span2">
+          <label>Previous Facial Paralysis Treatment</label>
+          <input type="text" id="prev_fp_tx" placeholder="Prior treatments for facial paralysis">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: ETIOLOGY & ONSET ── -->
+  <div class="form-section" id="section-1">
+    <div class="section-header">
+      <h2>Etiology & Onset</h2>
+      <p>Level of injury, cause, and timeline</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Level of Injury</div>
+      <div class="check-grid-3">
+        <label class="check-row"><input type="radio" name="level" value="Intracranial"> Intracranial</label>
+        <label class="check-row"><input type="radio" name="level" value="Intratemporal"> Intratemporal</label>
+        <label class="check-row"><input type="radio" name="level" value="Extratemporal"> Extratemporal</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Etiology</div>
+      <div class="check-grid">
+        <label class="check-row"><input type="checkbox" name="etiology" value="Stroke"> Stroke</label>
+        <label class="check-row"><input type="checkbox" name="etiology" value="Skull fracture"> Skull fracture</label>
+        <label class="check-row"><input type="checkbox" name="etiology" value="Direct trauma"> Direct trauma</label>
+        <label class="check-row"><input type="checkbox" name="etiology" value="Brain surgery"> Brain surgery</label>
+        <label class="check-row"><input type="checkbox" name="etiology" value="Bell's palsy"> Bell's palsy</label>
+        <label class="check-row"><input type="checkbox" name="etiology" value="Parotid tumor/surgery"> Parotid tumor/surgery</label>
+        <label class="check-row"><input type="checkbox" name="etiology" value="Ear infection"> Ear infection</label>
+        <label class="check-row"><input type="checkbox" name="etiology" value="Other infections">
+          <span class="inline-field">Other infections: <input type="text" id="etiology_other_infect" placeholder="specify" style="min-width:100px;"></span>
+        </label>
+      </div>
+      <div style="margin-top:8px">
+        <label class="check-row"><input type="checkbox" name="etiology" value="Others">
+          <span class="inline-field">Others: <input type="text" id="etiology_other" placeholder="specify" style="min-width:150px;"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Onset</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Date of Onset</label>
+          <input type="date" id="onset_date">
+        </div>
+        <div class="field">
+          <label>Duration <span class="req">*</span></label>
+          <select id="duration">
+            <option value="">— select —</option>
+            <option>Acute &lt;72 hr</option>
+            <option>&lt; 12 months</option>
+            <option>12–24 months</option>
+            <option>&gt; 24 months</option>
+          </select>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="form-grid three" style="margin-top:4px">
+        <div>
+          <div class="card-title" style="margin-bottom:10px">Mode of onset</div>
+          <div class="check-group">
+            <label class="check-row"><input type="radio" name="mode_onset" value="Sudden"> Sudden</label>
+            <label class="check-row"><input type="radio" name="mode_onset" value="Gradual"> Gradual onset</label>
+          </div>
+        </div>
+        <div>
+          <div class="card-title" style="margin-bottom:10px">Course</div>
+          <div class="check-group">
+            <label class="check-row"><input type="radio" name="course" value="Progressive"> Progressive</label>
+            <label class="check-row"><input type="radio" name="course" value="Stable"> Stable</label>
+            <label class="check-row"><input type="radio" name="course" value="Improving"> Improving</label>
+          </div>
+        </div>
+        <div>
+          <div class="card-title" style="margin-bottom:10px">Episode</div>
+          <div class="check-group">
+            <label class="check-row"><input type="checkbox" name="episode" value="Recurrent"> Recurrent episode</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: SIGNS & SYMPTOMS ── -->
+  <div class="form-section" id="section-2">
+    <div class="section-header">
+      <h2>Signs & Symptoms</h2>
+      <p>Select all that apply</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Side Involved</div>
+      <div class="check-grid-3">
+        <label class="check-row"><input type="radio" name="side" value="Right"> Right</label>
+        <label class="check-row"><input type="radio" name="side" value="Left"> Left</label>
+        <label class="check-row"><input type="radio" name="side" value="Bilateral"> Bilateral</label>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Symptoms</div>
+      <div class="check-grid">
+        <label class="check-row"><input type="checkbox" name="symptom" value="Brow ptosis"> Brow ptosis</label>
+        <label class="check-row"><input type="checkbox" name="symptom" value="Eye dryness/Tearing abnormality"> Eye dryness / Tearing abnormality</label>
+        <label class="check-row"><input type="checkbox" name="symptom" value="Lagophthalmos"> Lagophthalmos</label>
+        <label class="check-row"><input type="checkbox" name="symptom" value="Nasal asymmetry / alar collapse"> Nasal asymmetry / alar collapse</label>
+        <label class="check-row"><input type="checkbox" name="symptom" value="Asymmetrical smile"> Asymmetrical smile</label>
+        <label class="check-row"><input type="checkbox" name="symptom" value="Drooling"> Drooling</label>
+        <label class="check-row"><input type="checkbox" name="symptom" value="Drooping corner of mouth"> Drooping corner of mouth</label>
+        <label class="check-row"><input type="checkbox" name="symptom" value="Hearing change/Vertigo/Hyperacusis"> Hearing change / Vertigo / Hyperacusis</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: PHYSICAL EXAM ── -->
+  <div class="form-section" id="section-3">
+    <div class="section-header">
+      <h2>Physical Examination</h2>
+      <p>Facial grading, synkinesis, nerve function, and ophthalmology</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Facial Grading Assessment</div>
+      <div style="overflow-x:auto">
+        <table class="grading-table">
+          <thead>
+            <tr>
+              <th style="min-width:200px">Movement</th>
+              <th colspan="2">House-Brackmann Grade (I–VI)</th>
+              <th colspan="2">Sunnybrook Score (0–100)</th>
+            </tr>
+            <tr style="background:rgba(122,28,46,0.6)">
+              <th></th>
+              <th>Right</th>
+              <th>Left</th>
+              <th>Right</th>
+              <th>Left</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Brow elevation (Frontalis m.)</td>
+              <td><input type="number" id="hb_brow_r" min="1" max="6" placeholder="I–VI"></td>
+              <td><input type="number" id="hb_brow_l" min="1" max="6" placeholder="I–VI"></td>
+              <td><input type="number" id="sb_brow_r" min="0" max="100" placeholder="0–100"></td>
+              <td><input type="number" id="sb_brow_l" min="0" max="100" placeholder="0–100"></td>
+            </tr>
+            <tr>
+              <td>Eye closure (Orbicularis oculi m.)</td>
+              <td><input type="number" id="hb_eye_r" min="1" max="6" placeholder="I–VI"></td>
+              <td><input type="number" id="hb_eye_l" min="1" max="6" placeholder="I–VI"></td>
+              <td><input type="number" id="sb_eye_r" min="0" max="100" placeholder="0–100"></td>
+              <td><input type="number" id="sb_eye_l" min="0" max="100" placeholder="0–100"></td>
+            </tr>
+            <tr>
+              <td>Smile (Zygomaticus / Levator labii)</td>
+              <td><input type="number" id="hb_smile_r" min="1" max="6" placeholder="I–VI"></td>
+              <td><input type="number" id="hb_smile_l" min="1" max="6" placeholder="I–VI"></td>
+              <td><input type="number" id="sb_smile_r" min="0" max="100" placeholder="0–100"></td>
+              <td><input type="number" id="sb_smile_l" min="0" max="100" placeholder="0–100"></td>
+            </tr>
+            <tr>
+              <td>Lip pucker (Orbicularis oris m.)</td>
+              <td><input type="number" id="hb_pucker_r" min="1" max="6" placeholder="I–VI"></td>
+              <td><input type="number" id="hb_pucker_l" min="1" max="6" placeholder="I–VI"></td>
+              <td><input type="number" id="sb_pucker_r" min="0" max="100" placeholder="0–100"></td>
+              <td><input type="number" id="sb_pucker_l" min="0" max="100" placeholder="0–100"></td>
+            </tr>
+            <tr>
+              <td>Lip depressor</td>
+              <td><input type="number" id="hb_depr_r" min="1" max="6" placeholder="I–VI"></td>
+              <td><input type="number" id="hb_depr_l" min="1" max="6" placeholder="I–VI"></td>
+              <td><input type="number" id="sb_depr_r" min="0" max="100" placeholder="0–100"></td>
+              <td><input type="number" id="sb_depr_l" min="0" max="100" placeholder="0–100"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Synkinesis</div>
+      <label class="check-row" style="max-width:200px;margin-bottom:12px">
+        <input type="checkbox" id="synkinesis_present"> Synkinesis present
+      </label>
+      <div style="margin-left:8px">
+        <label style="margin-bottom:6px;display:block">Severity</label>
+        <div class="check-grid-3" style="max-width:400px">
+          <label class="check-row"><input type="radio" name="synkinesis_severity" value="Mild"> Mild</label>
+          <label class="check-row"><input type="radio" name="synkinesis_severity" value="Moderate"> Moderate</label>
+          <label class="check-row"><input type="radio" name="synkinesis_severity" value="Severe"> Severe</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Cranial Nerve Function</div>
+      <div class="form-grid three">
+        <div class="field">
+          <label>Donor Nerve</label>
+          <input type="text" id="donor_nerve" placeholder="e.g. CN V, XI, XII">
+        </div>
+        <div class="field">
+          <label>CN V Function</label>
+          <input type="text" id="cn5" placeholder="Normal / Abnormal / Describe">
+        </div>
+        <div class="field">
+          <label>CN XI Function</label>
+          <input type="text" id="cn11" placeholder="Normal / Abnormal / Describe">
+        </div>
+        <div class="field">
+          <label>CN XII Function</label>
+          <input type="text" id="cn12" placeholder="Normal / Abnormal / Describe">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Ophthalmologic Evaluation</div>
+      <div class="check-grid">
+        <label class="check-row"><input type="checkbox" name="ophthal" value="Lagophthalmos">
+          <span class="inline-field">Lagophthalmos <input type="number" id="lagoph_mm" placeholder="mm" style="width:70px;margin-left:6px"> mm</span>
+        </label>
+        <label class="check-row"><input type="checkbox" name="ophthal" value="Bell's phenomenon present">
+          Bell's phenomenon: &nbsp;
+          <select id="bells" style="width:auto;padding:4px 8px;font-size:13px">
+            <option value="">—</option><option>Present</option><option>Absent</option>
+          </select>
+        </label>
+        <label class="check-row"><input type="checkbox" name="ophthal" value="Corneal ulcer"> Corneal ulcer</label>
+        <label class="check-row"><input type="checkbox" name="ophthal" value="Epiphora"> Epiphora</label>
+        <label class="check-row"><input type="checkbox" name="ophthal" value="Lower lid laxity"> Lower lid laxity</label>
+        <label class="check-row"><input type="checkbox" name="ophthal" value="Ectropion"> Ectropion</label>
+      </div>
+      <div class="field" style="margin-top:12px;max-width:320px">
+        <label>Visual Acuity</label>
+        <input type="text" id="visual_acuity" placeholder="e.g. 20/20 OD, 20/40 OS">
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 5: INVESTIGATIONS ── -->
+  <div class="form-section" id="section-4">
+    <div class="section-header">
+      <h2>Investigations</h2>
+      <p>Diagnostic workup and results</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Investigations</div>
+      <div class="check-group">
+        <label class="check-row"><input type="checkbox" name="invest" value="EMG/NCS">
+          <span class="inline-field">
+            EMG / NCS &nbsp; Date: <input type="date" id="emg_date" style="width:160px">
+            <input type="text" id="emg_result" placeholder="Result / findings" style="min-width:160px">
+          </span>
+        </label>
+        <label class="check-row"><input type="checkbox" name="invest" value="MRI brain">
+          <span class="inline-field">
+            MRI Brain &nbsp; Date: <input type="date" id="mri_date" style="width:160px">
+            <input type="text" id="mri_result" placeholder="Result / findings" style="min-width:160px">
+          </span>
+        </label>
+        <label class="check-row"><input type="checkbox" name="invest" value="CT brain/facial bone">
+          <span class="inline-field">
+            CT Brain / Facial Bone &nbsp; Date: <input type="date" id="ct_date" style="width:160px">
+            <input type="text" id="ct_result" placeholder="Result / findings" style="min-width:160px">
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Rehabilitation</div>
+      <div class="check-grid">
+        <label class="check-row"><input type="checkbox" name="rehab" value="Facial physiotherapy"> Facial physiotherapy</label>
+        <label class="check-row"><input type="checkbox" name="rehab" value="Neuromuscular retraining"> Neuromuscular retraining</label>
+        <label class="check-row"><input type="checkbox" name="rehab" value="Massage/stretching"> Massage / stretching</label>
+        <label class="check-row"><input type="checkbox" name="rehab" value="Botox injection"> Botox injection</label>
+        <label class="check-row"><input type="checkbox" name="rehab" value="Speech therapy"> Speech therapy</label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Patient Goals</div>
+      <div class="check-grid">
+        <label class="check-row"><input type="checkbox" name="goal" value="Eye protection"> Eye protection</label>
+        <label class="check-row"><input type="checkbox" name="goal" value="Improve smile"> Improve smile</label>
+        <label class="check-row"><input type="checkbox" name="goal" value="Improve symmetry"> Improve symmetry</label>
+        <label class="check-row"><input type="checkbox" name="goal" value="Improve nasal breathing"> Improve nasal breathing</label>
+        <label class="check-row"><input type="checkbox" name="goal" value="Emotional expression"> Emotional expression</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 6: SURGICAL MANAGEMENT ── -->
+  <div class="form-section" id="section-5">
+    <div class="section-header">
+      <h2>Surgical Management</h2>
+      <p>Select all procedures performed or planned</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Brow Lift</div>
+      <label class="check-row" style="max-width:300px">
+        <input type="checkbox" name="surgery" value="Direct brow lift"> Direct brow lift
+      </label>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Lagophthalmos Correction</div>
+      <div class="check-grid">
+        <label class="check-row"><input type="checkbox" name="surgery" value="Gold weight"> Gold weight</label>
+        <label class="check-row"><input type="checkbox" name="surgery" value="Static sling (eye)"> Static sling</label>
+        <label class="check-row"><input type="checkbox" name="surgery" value="Lateral tarsorrhaphy"> Lateral tarsorrhaphy</label>
+        <label class="check-row"><input type="checkbox" name="surgery" value="Cross-facial nerve graft (eye)">
+          <span>CFNG &nbsp;
+            <span style="font-size:12px;color:var(--ink-light)">
+              <input type="text" id="cfng_eye_from" placeholder="from nerve" style="width:100px"> →
+              <input type="text" id="cfng_eye_to" placeholder="to nerve" style="width:100px">
+            </span>
+          </span>
+        </label>
+        <label class="check-row"><input type="checkbox" name="surgery" value="Temporalis muscle transposition"> Temporalis muscle transposition</label>
+        <label class="check-row"><input type="checkbox" name="surgery" value="Platysma muscle graft"> Platysma muscle graft</label>
+        <label class="check-row"><input type="checkbox" name="surgery" value="Platysma transplantation">
+          <span>Platysma transplant
+            <span style="font-size:11px;color:var(--ink-light)">
+              A: <input type="text" id="plat_art_from" placeholder="artery" style="width:70px"> → <input type="text" id="plat_art_to" placeholder="" style="width:70px">
+              N: <input type="text" id="plat_n_from" placeholder="nerve" style="width:70px"> → <input type="text" id="plat_n_to" placeholder="" style="width:70px">
+            </span>
+          </span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Nasal Airway Correction</div>
+      <label class="check-row" style="max-width:400px">
+        <input type="checkbox" name="surgery" value="Elevate nasal alar and airway"> Elevate nasal alar and nasal airway
+      </label>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Smile Reanimation Procedures</div>
+
+      <div style="margin-bottom:16px">
+        <div class="sub-label" style="margin-bottom:8px;font-size:12px;font-weight:600;color:var(--ink-mid)">Static</div>
+        <label class="check-row">
+          <input type="checkbox" name="surgery" value="Static sling upper lip/cheek">
+          <span class="inline-field">Static sling upper lip & cheek with <input type="text" id="static_sling_material" placeholder="material" style="min-width:120px"></span>
+        </label>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <div class="sub-label" style="margin-bottom:8px;font-size:12px;font-weight:600;color:var(--ink-mid)">Nerve Procedures</div>
+        <div class="check-group">
+          <label class="check-row"><input type="checkbox" name="surgery" value="Cranial nerve transfer">
+            <span class="inline-field">Cranial nerve transfer (CN
+              <select id="cn_transfer_from" style="width:70px;padding:4px 6px;font-size:12px">
+                <option value="">—</option><option>5</option><option>11</option><option>12</option>
+              </select> → CN 7)
+            </span>
+          </label>
+          <label class="check-row"><input type="checkbox" name="surgery" value="Cross facial nerve graft (smile)">
+            <span class="inline-field">CFNG: from CN 7 br
+              <input type="text" id="cfng_smile_from" placeholder="branch" style="width:90px"> to CN 7 br
+              <input type="text" id="cfng_smile_to" placeholder="branch" style="width:90px">
+            </span>
+          </label>
+          <label class="check-row"><input type="checkbox" name="surgery" value="Babysitter"> Babysitter</label>
+        </div>
+      </div>
+
+      <div>
+        <div class="sub-label" style="margin-bottom:8px;font-size:12px;font-weight:600;color:var(--ink-mid)">Muscle Procedures</div>
+        <div class="check-group">
+          <label class="check-row"><input type="checkbox" name="surgery" value="Regional muscle transfer">
+            <span>Regional muscle transfer &nbsp;
+              <select id="regional_muscle" style="width:180px;padding:4px 8px;font-size:12px">
+                <option value="">— select muscle —</option>
+                <option>Temporalis m. transfer</option>
+                <option>Masseter m. transfer</option>
+              </select>
+            </span>
+          </label>
+          <label class="check-row"><input type="checkbox" name="surgery" value="Free muscle transfer">
+            <span class="inline-field">Free muscle transfer
+              <input type="text" id="free_muscle_name" placeholder="muscle name" style="width:120px">
+              A: <input type="text" id="free_a_from" placeholder="artery" style="width:80px"> → <input type="text" id="free_a_to" placeholder="" style="width:80px">
+              N: <input type="text" id="free_n_from" placeholder="nerve" style="width:80px"> → <input type="text" id="free_n_to" placeholder="" style="width:80px">
+            </span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Clinical Notes</div>
+      <div class="field">
+        <label>Additional Notes / Remarks</label>
+        <textarea id="notes" rows="4" placeholder="Any other relevant clinical information, complications, plan…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 7: REVIEW ── -->
+  <div class="form-section" id="section-6">
+    <div class="section-header">
+      <h2>Review & Submit</h2>
+      <p>Please verify all information before submitting</p>
+    </div>
+    <div class="card" id="review-content">
+      <!-- dynamically filled -->
+    </div>
+    <div class="note-box">
+      ⚠️ By submitting, you confirm this information is accurate to the best of your knowledge and will be stored in the CMU Facial Paralysis Registry. This record will be attributed to your CMU account.
+    </div>
+  </div>
+
+  <!-- ── SUCCESS ── -->
+  <div id="success-screen">
+    <div class="success-icon">✓</div>
+    <h2>Case Registered Successfully</h2>
+    <p>The case has been added to the CMU Facial Paralysis Registry. The data has been saved and your team can now access this record.</p>
+    <div class="case-id-badge" id="case-id-display">CMU-FP-XXXX</div>
+    <button class="btn btn-primary" onclick="newCase()">Register New Case</button>
+  </div>
+
+</div><!-- /main -->
+
+<!-- NAVIGATION BAR -->
+<div class="nav-bar" id="nav-bar" style="display:none">
+  <div class="nav-inner">
+    <div>
+      <button class="btn btn-secondary" onclick="prevStep()" id="btn-prev">← Back</button>
+    </div>
+    <div class="step-indicator" id="step-indicator">Step 1 of 7</div>
+    <div>
+      <button class="btn btn-primary" onclick="nextStep()" id="btn-next">Continue →</button>
+      <button class="btn btn-submit" onclick="submitForm()" id="btn-submit" style="display:none">Submit Case ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const TOTAL_STEPS = 7;
+  let currentStep = 0;
+  let currentUser = null;
+
+  // ── AUTH ──
+  function loginWithGoogle() {
+    // Simulate Google OAuth (replace with real Google Identity Services in production)
+    const mockUsers = [
+      { name: "Dr. Siriporn Kanchanasevee", email: "siriporn.k@cmu.ac.th", initials: "SK" },
+      { name: "Dr. Thanawat Puwaphan", email: "thanawat.p@cmu.ac.th", initials: "TP" },
+    ];
+    const user = mockUsers[0]; // In real deployment: use Google OAuth
+    setUser(user);
+  }
+
+  function setUser(user) {
+    currentUser = user;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('user-area').style.display = 'flex';
+    document.getElementById('user-name-display').textContent = user.name;
+    document.getElementById('user-initials').textContent = user.initials;
+    document.getElementById('progress-bar').style.display = 'block';
+    document.getElementById('nav-bar').style.display = 'block';
+    document.getElementById('section-0').classList.add('active');
+    // Default visit date to today
+    document.getElementById('visit_date').value = new Date().toISOString().split('T')[0];
+    updateNav();
+  }
+
+  function logout() {
+    currentUser = null;
+    location.reload();
+  }
+
+  // ── NAVIGATION ──
+  function goTo(step) {
+    if (step < 0 || step >= TOTAL_STEPS) return;
+    document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('section-' + step).classList.add('active');
+    document.querySelectorAll('.step-tab').forEach((t, i) => {
+      t.classList.remove('active', 'done');
+      if (i === step) t.classList.add('active');
+      else if (i < step) t.classList.add('done');
+    });
+    currentStep = step;
+    updateNav();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (step === 6) buildReview();
+  }
+
+  function nextStep() {
+    if (currentStep < TOTAL_STEPS - 1) goTo(currentStep + 1);
+  }
+  function prevStep() {
+    if (currentStep > 0) goTo(currentStep - 1);
+  }
+
+  function updateNav() {
+    document.getElementById('btn-prev').style.display = currentStep === 0 ? 'none' : '';
+    document.getElementById('btn-next').style.display = currentStep === TOTAL_STEPS - 1 ? 'none' : '';
+    document.getElementById('btn-submit').style.display = currentStep === TOTAL_STEPS - 1 ? '' : 'none';
+    document.getElementById('step-indicator').textContent = `Step ${currentStep + 1} of ${TOTAL_STEPS}`;
+  }
+
+  // ── REVIEW ──
+  function getChecked(name) {
+    return [...document.querySelectorAll(`[name="${name}"]:checked`)].map(e => e.value).join(', ') || '—';
+  }
+  function val(id) { return document.getElementById(id)?.value || '—'; }
+
+  function buildReview() {
+    const html = `
+      <div class="review-block">
+        <h3>Patient Information</h3>
+        <div class="review-row"><span class="label">HN</span><span class="value">${val('hn')}</span></div>
+        <div class="review-row"><span class="label">Date of Visit</span><span class="value">${val('visit_date')}</span></div>
+        <div class="review-row"><span class="label">Age / Sex</span><span class="value">${val('age')} y / ${val('sex')}</span></div>
+        <div class="review-row"><span class="label">Occupation</span><span class="value">${val('occupation')}</span></div>
+        <div class="review-row"><span class="label">Underlying Disease</span><span class="value">${val('underlying_disease')}</span></div>
+        <div class="review-row"><span class="label">Smoking</span><span class="value">${val('smoking')}</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="review-block">
+        <h3>Etiology & Onset</h3>
+        <div class="review-row"><span class="label">Level of Injury</span><span class="value">${getChecked('level')}</span></div>
+        <div class="review-row"><span class="label">Etiology</span><span class="value">${getChecked('etiology')}</span></div>
+        <div class="review-row"><span class="label">Date of Onset</span><span class="value">${val('onset_date')}</span></div>
+        <div class="review-row"><span class="label">Duration</span><span class="value">${val('duration')}</span></div>
+        <div class="review-row"><span class="label">Mode / Course</span><span class="value">${getChecked('mode_onset')} / ${getChecked('course')}</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="review-block">
+        <h3>Signs & Symptoms</h3>
+        <div class="review-row"><span class="label">Side</span><span class="value">${getChecked('side')}</span></div>
+        <div class="review-row"><span class="label">Symptoms</span><span class="value">${getChecked('symptom')}</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="review-block">
+        <h3>Facial Grading (HB / SB)</h3>
+        <div class="review-row"><span class="label">Brow (R/L)</span><span class="value">HB: ${val('hb_brow_r')}/${val('hb_brow_l')} · SB: ${val('sb_brow_r')}/${val('sb_brow_l')}</span></div>
+        <div class="review-row"><span class="label">Eye (R/L)</span><span class="value">HB: ${val('hb_eye_r')}/${val('hb_eye_l')} · SB: ${val('sb_eye_r')}/${val('sb_eye_l')}</span></div>
+        <div class="review-row"><span class="label">Smile (R/L)</span><span class="value">HB: ${val('hb_smile_r')}/${val('hb_smile_l')} · SB: ${val('sb_smile_r')}/${val('sb_smile_l')}</span></div>
+        <div class="review-row"><span class="label">Synkinesis</span><span class="value">${document.getElementById('synkinesis_present').checked ? 'Yes — ' + getChecked('synkinesis_severity') : 'None'}</span></div>
+        <div class="review-row"><span class="label">Ophthalmology</span><span class="value">${getChecked('ophthal')}</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="review-block">
+        <h3>Investigations & Rehabilitation</h3>
+        <div class="review-row"><span class="label">Investigations</span><span class="value">${getChecked('invest')}</span></div>
+        <div class="review-row"><span class="label">Rehabilitation</span><span class="value">${getChecked('rehab')}</span></div>
+        <div class="review-row"><span class="label">Patient Goals</span><span class="value">${getChecked('goal')}</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="review-block">
+        <h3>Surgical Management</h3>
+        <div class="review-row"><span class="label">Procedures</span><span class="value">${getChecked('surgery') || '—'}</span></div>
+      </div>
+      <div class="divider"></div>
+      <div class="review-block">
+        <h3>Recorded By</h3>
+        <div class="review-row"><span class="label">Clinician</span><span class="value">${currentUser?.name}</span></div>
+        <div class="review-row"><span class="label">Email</span><span class="value">${currentUser?.email}</span></div>
+        <div class="review-row"><span class="label">Timestamp</span><span class="value">${new Date().toLocaleString('th-TH', {timeZone:'Asia/Bangkok'})}</span></div>
+      </div>
+    `;
+    document.getElementById('review-content').innerHTML = html;
+  }
+
+  // ── SUBMIT ──
+  const WEB_APP_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL";
+
+  async function submitForm() {
+    const btn = document.getElementById('btn-submit');
+    btn.textContent = 'Submitting…';
+    btn.disabled = true;
+
+    const caseNum = 'CMU-FP-' + String(Math.floor(1000 + Math.random() * 8999));
+    const payload = collectData();
+    payload.case_id = caseNum;
+
+    try {
+      await fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(payload)
+      });
+    } catch(err) {
+      console.warn('Submit error (may still have saved):', err);
+    }
+
+    document.querySelectorAll('.form-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('progress-bar').style.display = 'none';
+    document.getElementById('nav-bar').style.display = 'none';
+    const ss = document.getElementById('success-screen');
+    ss.style.display = 'flex';
+    document.getElementById('case-id-display').textContent = caseNum;
+  }
+
+  function newCase() {
+    location.reload();
+  }
+
+  function collectData() {
+    return {
+      // Patient Info
+      hn:                  val('hn'),
+      visit_date:          val('visit_date'),
+      age:                 val('age'),
+      sex:                 val('sex'),
+      occupation:          val('occupation'),
+      underlying_disease:  val('underlying_disease'),
+      smoking:             val('smoking'),
+      prev_surgery:        val('prev_surgery'),
+      prev_botox:          val('prev_botox'),
+      prev_fp_tx:          val('prev_fp_tx'),
+      // Etiology & Onset
+      level:               getChecked('level'),
+      etiology:            getChecked('etiology'),
+      onset_date:          val('onset_date'),
+      duration:            val('duration'),
+      mode_onset:          getChecked('mode_onset'),
+      course:              getChecked('course'),
+      recurrent:           getChecked('episode'),
+      // Signs & Symptoms
+      side:                getChecked('side'),
+      symptoms:            getChecked('symptom'),
+      // Grading - House Brackmann
+      hb_brow_r:           val('hb_brow_r'),
+      hb_brow_l:           val('hb_brow_l'),
+      hb_eye_r:            val('hb_eye_r'),
+      hb_eye_l:            val('hb_eye_l'),
+      hb_smile_r:          val('hb_smile_r'),
+      hb_smile_l:          val('hb_smile_l'),
+      hb_pucker_r:         val('hb_pucker_r'),
+      hb_pucker_l:         val('hb_pucker_l'),
+      hb_depr_r:           val('hb_depr_r'),
+      hb_depr_l:           val('hb_depr_l'),
+      // Grading - Sunnybrook
+      sb_brow_r:           val('sb_brow_r'),
+      sb_brow_l:           val('sb_brow_l'),
+      sb_eye_r:            val('sb_eye_r'),
+      sb_eye_l:            val('sb_eye_l'),
+      sb_smile_r:          val('sb_smile_r'),
+      sb_smile_l:          val('sb_smile_l'),
+      sb_pucker_r:         val('sb_pucker_r'),
+      sb_pucker_l:         val('sb_pucker_l'),
+      sb_depr_r:           val('sb_depr_r'),
+      sb_depr_l:           val('sb_depr_l'),
+      // Synkinesis
+      synkinesis:          document.getElementById('synkinesis_present').checked ? 'Yes' : 'No',
+      synkinesis_severity: getChecked('synkinesis_severity'),
+      // Nerve Function
+      donor_nerve:         val('donor_nerve'),
+      cn5:                 val('cn5'),
+      cn11:                val('cn11'),
+      cn12:                val('cn12'),
+      // Ophthalmology
+      ophthalmo:           getChecked('ophthal'),
+      lagoph_mm:           val('lagoph_mm'),
+      bells:               val('bells'),
+      visual_acuity:       val('visual_acuity'),
+      // Investigations
+      investigations:      getChecked('invest'),
+      emg_date:            val('emg_date'),
+      emg_result:          val('emg_result'),
+      mri_date:            val('mri_date'),
+      mri_result:          val('mri_result'),
+      ct_date:             val('ct_date'),
+      ct_result:           val('ct_result'),
+      // Rehab & Goals
+      rehabilitation:      getChecked('rehab'),
+      goals:               getChecked('goal'),
+      // Surgery
+      surgery:             getChecked('surgery'),
+      notes:               val('notes'),
+      // Record
+      clinician:           currentUser?.name,
+      email:               currentUser?.email,
+      timestamp:           new Date().toISOString()
+    };
+  }
+</script>
+</body>
+</html>
